@@ -1,0 +1,22 @@
+[
+  {
+    "title": "gym",
+    "is_completed": true,
+    "due_date": "2026-03-23"
+  },
+  {
+    "title": "study maths",
+    "is_completed": true,
+    "due_date": "2026-03-23"
+  },
+  {
+    "title": "basketball",
+    "is_completed": true,
+    "due_date": "2026-03-23"
+  },
+  {
+    "title": "learning new musical instrument",
+    "is_completed": true,
+    "due_date": "2026-03-26"
+  }
+]
