@@ -10,40 +10,69 @@
     <style>
         body {
             background-color: #f5f7fa;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
         }
+    
         .sidebar {
             height: 100vh;
-            background: #111;
+            background: #1e1e2f;
             color: white;
             padding: 20px;
+            position: fixed;
+            width: 220px;
         }
+    
         .sidebar a {
-            color: #ccc;
+            color: #bbb;
             display: block;
-            margin: 10px 0;
+            margin: 12px 0;
             text-decoration: none;
+            font-size: 15px;
         }
+    
         .sidebar a:hover {
             color: white;
         }
+    
+        .main-content {
+            margin-left: 220px;
+            padding: 20px;
+        }
+    
         .card {
-            border-radius: 15px;
+            border-radius: 12px;
+            border: none;
+        }
+    
+        .navbar {
+            border-radius: 10px;
         }
     </style>
 </head>
 
 <body>
 
-<div class="container-fluid">
-    <div class="row">
+<!-- Sidebar -->
+<div class="sidebar">
+    <h4>Tracker</h4>
+    <a href="/">Dashboard</a>
+    <a href="/add">Add Task</a>
+    <a href="/review">Review</a>
+</div>
 
-        <!-- Sidebar -->
-        <div class="col-md-2 sidebar">
-            <h4>Tracker</h4>
-            <a href="/">Dashboard</a>
-            <a href="/add">Add Task</a>
-            <a href="/review">Review</a>
-        </div>
+<!-- Main Content -->
+<div class="main-content">
+
+    <!-- Navbar -->
+    <nav class="navbar bg-white shadow-sm mb-4 px-3">
+        <span class="navbar-brand">Productivity Dashboard 🚀</span>
+    </nav>
+
+    {% block content %}{% endblock %}
+
+</div>
 
         <!-- Main Content -->
         <div class="col-md-10 p-4">
