@@ -1,0 +1,36 @@
+.sidebar {
+  background: #111827;
+}
+
+.sidebar .nav-link {
+  color: #d1d5db;
+  border-radius: 0.6rem;
+  padding: 0.55rem 0.75rem;
+}
+
+.sidebar .nav-link:hover {
+  background-color: rgba(59, 130, 246, 0.15);
+  color: #ffffff;
+}
+
+.sidebar .nav-link.active {
+  background-color: #3b82f6;
+  color: #ffffff;
+}
+
+.stat-card {
+  border: 0;
+  border-radius: 1rem;
+  box-shadow: 0 0.3rem 1rem rgba(17, 24, 39, 0.08);
+}
+
+.task-list-item {
+  border: 0;
+  border-radius: 0.85rem;
+}
+
+@media (max-width: 767.98px) {
+  .sidebar {
+    min-height: auto;
+  }
+}

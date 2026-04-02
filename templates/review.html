@@ -1,51 +1,74 @@
 {% extends "base.html" %}
 
-{% block content %}
+{% set active_page = "review" %}
+{% set page_title = "Review Tasks" %}
 
-<h2 class="mb-4">Evening Review</h2>
-
-<ul class="list-group">
-
-    {% for task in tasks %}
-    <li class="list-group-item d-flex justify-content-between align-items-center">
-        
-        <span>
-            {{ task.description }}
-        </span>
-
-        {% if not task.status %}
-            <a href="/complete/{{ loop.index0 }}" class="btn btn-success btn-sm">Mark Done</a>
-        {% else %}
-            <span class="badge bg-success">Done</span>
-        {% endif %}
-
-    </li>
-    {% endfor %}
-
-</ul>
-
-{% endblock %}
-
-{% extends "base.html" %}
+{% block title %}Review Tasks - Daily Productivity Tracker{% endblock %}
 
 {% block content %}
+  <div class="row g-3 mb-3">
+    <div class="col-12 col-sm-4">
+      <div class="card stat-card">
+        <div class="card-body">
+          <p class="text-body-secondary mb-1">Total</p>
+          <h4 class="mb-0">{{ total }}</h4>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-4">
+      <div class="card stat-card">
+        <div class="card-body">
+          <p class="text-body-secondary mb-1">Completed</p>
+          <h4 class="mb-0">{{ completed }}</h4>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-4">
+      <div class="card stat-card">
+        <div class="card-body">
+          <p class="text-body-secondary mb-1">Completion</p>
+          <h4 class="mb-0">{{ completion_pct }}%</h4>
+        </div>
+      </div>
+    </div>
+  </div>
 
-<h2 class="mb-4">Evening Review</h2>
-
-<ul class="list-group">
-
-    {% for task in tasks %}
-    <li class="list-group-item d-flex justify-content-between align-items-center">
-        {{ task.description }}
-
-        {% if not task.status %}
-            <a href="/complete/{{ loop.index0 }}" class="btn btn-success btn-sm">Mark Done</a>
-        {% else %}
-            <span class="badge bg-success">Done</span>
-        {% endif %}
-    </li>
-    {% endfor %}
-
-</ul>
-
+  <div class="card stat-card">
+    <div class="card-body">
+      {% if tasks %}
+        <div class="vstack gap-3">
+          {% for task in tasks %}
+            <div class="p-3 border rounded-3">
+              <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                <div>
+                  <div class="fw-semibold {% if task.is_completed %}text-decoration-line-through text-body-secondary{% endif %}">
+                    {{ task.title }}
+                  </div>
+                  {% if task.due_date %}
+                    <small class="text-body-secondary">Due: {{ task.due_date }}</small>
+                  {% endif %}
+                </div>
+                <div class="d-flex gap-2 flex-wrap">
+                  {% if task.is_completed %}
+                    <span class="badge text-bg-success">Completed</span>
+                  {% else %}
+                    <form action="{{ url_for('complete_task', index=loop.index0) }}" method="post" class="m-0">
+                      <button type="submit" class="btn btn-sm btn-primary">Complete</button>
+                    </form>
+                    <span class="badge text-bg-primary">Pending</span>
+                  {% endif %}
+                  <form action="{{ url_for('delete_task', index=loop.index0) }}" method="post" class="m-0">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="text-body-secondary">No tasks yet. Add your first task from the Add Task page.</div>
+      {% endif %}
+    </div>
+  </div>
 {% endblock %}
+
