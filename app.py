@@ -4,26 +4,41 @@ import os
 import uuid
 
 from flask import Flask, abort, redirect, render_template, request, session, url_for
+from flask_login import LoginManager, UserMixin, current_user, login_user
 from pathlib import Path
 
 from task_manager import TaskManager
+
+
+class SessionUser(UserMixin):
+    def __init__(self, user_id: str) -> None:
+        self.id = user_id
 
 
 def create_app() -> Flask:
     app_root = Path(__file__).resolve().parent
     app = Flask(__name__, template_folder=str(app_root / "templates"))
     app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-me")
+    login_manager = LoginManager()
+    login_manager.init_app(app)
+    login_manager.session_protection = "strong"
     data_dir = app_root / "data"
     data_dir.mkdir(parents=True, exist_ok=True)
+
+    @login_manager.user_loader
+    def load_user(user_id: str) -> SessionUser:
+        return SessionUser(user_id)
 
     @app.before_request
     def ensure_user() -> None:
         # Session-scoped identity so multiple users get unique JSON storage.
         if "user_id" not in session:
             session["user_id"] = uuid.uuid4().hex
+        if not current_user.is_authenticated:
+            login_user(SessionUser(session["user_id"]), remember=False)
 
     def get_manager() -> TaskManager:
-        user_id = session["user_id"]
+        user_id = current_user.get_id() or session["user_id"]
         file_path = data_dir / f"tasks_{user_id}.json"
         return TaskManager(file_path=file_path)
 
