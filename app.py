@@ -1,18 +1,21 @@
 from __future__ import annotations
 
+import json
 import os
 import uuid
 
-from flask import Flask, abort, redirect, render_template, request, session, url_for
-from flask_login import LoginManager, UserMixin, current_user, login_user
+from flask import Flask, abort, flash, redirect, render_template, request, url_for
+from flask_login import LoginManager, UserMixin, current_user, login_required, login_user, logout_user
+from werkzeug.security import check_password_hash, generate_password_hash
 from pathlib import Path
 
 from task_manager import TaskManager
 
 
-class SessionUser(UserMixin):
-    def __init__(self, user_id: str) -> None:
+class AppUser(UserMixin):
+    def __init__(self, user_id: str, username: str) -> None:
         self.id = user_id
+        self.username = username
 
 
 def create_app() -> Flask:
@@ -21,28 +24,156 @@ def create_app() -> Flask:
     app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-me")
     login_manager = LoginManager()
     login_manager.init_app(app)
+    login_manager.login_view = "login_page"
+    login_manager.login_message = "Please log in to continue."
     login_manager.session_protection = "strong"
     data_dir = app_root / "data"
     data_dir.mkdir(parents=True, exist_ok=True)
+    users_file = data_dir / "users.json"
+
+    def load_users() -> list[dict[str, str]]:
+        if not users_file.exists():
+            return []
+        try:
+            data = json.loads(users_file.read_text(encoding="utf-8"))
+            if not isinstance(data, list):
+                return []
+            users: list[dict[str, str]] = []
+            for item in data:
+                if not isinstance(item, dict):
+                    continue
+                user_id = str(item.get("id", "")).strip()
+                username = str(item.get("username", "")).strip()
+                password_hash = str(item.get("password_hash", "")).strip()
+                if user_id and username and password_hash:
+                    users.append(
+                        {"id": user_id, "username": username, "password_hash": password_hash}
+                    )
+            return users
+        except (json.JSONDecodeError, OSError):
+            return []
+
+    def save_users(users: list[dict[str, str]]) -> None:
+        users_file.parent.mkdir(parents=True, exist_ok=True)
+        users_file.write_text(json.dumps(users, indent=2), encoding="utf-8")
+
+    def find_user_by_id(user_id: str) -> dict[str, str] | None:
+        for user in load_users():
+            if user["id"] == user_id:
+                return user
+        return None
+
+    def find_user_by_username(username: str) -> dict[str, str] | None:
+        target = username.strip().lower()
+        for user in load_users():
+            if user["username"].lower() == target:
+                return user
+        return None
 
     @login_manager.user_loader
-    def load_user(user_id: str) -> SessionUser:
-        return SessionUser(user_id)
-
-    @app.before_request
-    def ensure_user() -> None:
-        # Session-scoped identity so multiple users get unique JSON storage.
-        if "user_id" not in session:
-            session["user_id"] = uuid.uuid4().hex
-        if not current_user.is_authenticated:
-            login_user(SessionUser(session["user_id"]), remember=False)
+    def load_user(user_id: str) -> AppUser | None:
+        user = find_user_by_id(user_id)
+        if user is None:
+            return None
+        return AppUser(user_id=user["id"], username=user["username"])
 
     def get_manager() -> TaskManager:
-        user_id = current_user.get_id() or session["user_id"]
+        user_id = current_user.get_id()
+        if not user_id:
+            abort(401)
         file_path = data_dir / f"tasks_{user_id}.json"
         return TaskManager(file_path=file_path)
 
+    @app.get("/signup")
+    def signup_page():
+        if current_user.is_authenticated:
+            return redirect(url_for("home"))
+        return render_template("signup.html", error=None, username="")
+
+    @app.post("/signup")
+    def signup():
+        if current_user.is_authenticated:
+            return redirect(url_for("home"))
+
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+        confirm_password = request.form.get("confirm_password", "")
+
+        if not username:
+            return render_template("signup.html", error="Username is required.", username=username)
+        if len(username) < 3:
+            return render_template(
+                "signup.html",
+                error="Username must be at least 3 characters.",
+                username=username,
+            )
+        if len(password) < 6:
+            return render_template(
+                "signup.html",
+                error="Password must be at least 6 characters.",
+                username=username,
+            )
+        if password != confirm_password:
+            return render_template(
+                "signup.html",
+                error="Passwords do not match.",
+                username=username,
+            )
+        if find_user_by_username(username) is not None:
+            return render_template(
+                "signup.html",
+                error="Username already exists.",
+                username=username,
+            )
+
+        users = load_users()
+        user_id = uuid.uuid4().hex
+        users.append(
+            {
+                "id": user_id,
+                "username": username,
+                "password_hash": generate_password_hash(password),
+            }
+        )
+        save_users(users)
+        login_user(AppUser(user_id=user_id, username=username), remember=False)
+        flash("Signup successful. Welcome!", "success")
+        return redirect(url_for("home"))
+
+    @app.get("/login")
+    def login_page():
+        if current_user.is_authenticated:
+            return redirect(url_for("home"))
+        return render_template("login.html", error=None, username="")
+
+    @app.post("/login")
+    def login():
+        if current_user.is_authenticated:
+            return redirect(url_for("home"))
+
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+        user = find_user_by_username(username)
+        if user is None or not check_password_hash(user["password_hash"], password):
+            return render_template(
+                "login.html",
+                error="Invalid username or password.",
+                username=username,
+            )
+
+        login_user(AppUser(user_id=user["id"], username=user["username"]), remember=False)
+        flash("Logged in successfully.", "success")
+        return redirect(url_for("home"))
+
+    @app.post("/logout")
+    @login_required
+    def logout():
+        logout_user()
+        flash("Logged out successfully.", "info")
+        return redirect(url_for("login_page"))
+
     @app.get("/")
+    @login_required
     def home():
         manager = get_manager()
         tasks = manager.tasks
@@ -58,10 +189,12 @@ def create_app() -> Flask:
         )
 
     @app.get("/add")
+    @login_required
     def add_task_page():
         return render_template("add.html", error=None, title="", due_date="")
 
     @app.post("/add")
+    @login_required
     def add_task():
         manager = get_manager()
         title = request.form.get("title", "").strip()
@@ -88,6 +221,7 @@ def create_app() -> Flask:
         return redirect(url_for("home"))
 
     @app.get("/review")
+    @login_required
     def review_page():
         manager = get_manager()
         tasks = manager.tasks
@@ -103,6 +237,7 @@ def create_app() -> Flask:
         )
 
     @app.post("/review/<int:index>/complete")
+    @login_required
     def complete_task(index: int):
         manager = get_manager()
         try:
@@ -112,6 +247,7 @@ def create_app() -> Flask:
         return redirect(url_for("review_page"))
 
     @app.post("/review/<int:index>/delete")
+    @login_required
     def delete_task(index: int):
         manager = get_manager()
         try:
