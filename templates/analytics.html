@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% set active_page = "analytics" %}
+{% set page_title = "Analytics Dashboard" %}
+
+{% block title %}Analytics - Daily Productivity Tracker{% endblock %}
+
+{% block content %}
+  <div class="row g-3">
+    <div class="col-12 col-lg-6">
+      <div class="card stat-card">
+        <div class="card-body">
+          <h6>Tasks Completed per Day</h6>
+          <canvas id="completedChart" height="160"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-lg-6">
+      <div class="card stat-card">
+        <div class="card-body">
+          <h6>Productivity Trend (%)</h6>
+          <canvas id="productivityChart" height="160"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="col-12">
+      <div class="card stat-card">
+        <div class="card-body">
+          <h6>Study Time (Hours)</h6>
+          <canvas id="studyChart" height="110"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block extra_scripts %}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    const labels = {{ labels | tojson }};
+    const completedByDay = {{ completed_by_day | tojson }};
+    const productivityByDay = {{ productivity_by_day | tojson }};
+    const studyHoursByDay = {{ study_hours_by_day | tojson }};
+
+    new Chart(document.getElementById("completedChart"), {
+      type: "bar",
+      data: {
+        labels,
+        datasets: [{ label: "Completed tasks", data: completedByDay, backgroundColor: "#3b82f6" }]
+      }
+    });
+
+    new Chart(document.getElementById("productivityChart"), {
+      type: "line",
+      data: {
+        labels,
+        datasets: [{ label: "Productivity %", data: productivityByDay, borderColor: "#10b981", tension: 0.3 }]
+      }
+    });
+
+    new Chart(document.getElementById("studyChart"), {
+      type: "line",
+      data: {
+        labels,
+        datasets: [{ label: "Study hours", data: studyHoursByDay, borderColor: "#8b5cf6", tension: 0.3 }]
+      }
+    });
+  </script>
+{% endblock %}

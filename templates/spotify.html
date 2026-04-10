@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% set active_page = "spotify" %}
+{% set page_title = "Spotify" %}
+
+{% block title %}Spotify - Daily Productivity Tracker{% endblock %}
+
+{% block content %}
+  <div class="row justify-content-center">
+    <div class="col-12 col-lg-8">
+      <div class="card stat-card">
+        <div class="card-body p-4">
+          <h5 class="mb-3">Spotify Controls</h5>
+          {% if not has_token %}
+            <div class="alert alert-info">
+              Set `SPOTIFY_ACCESS_TOKEN` in environment variables to enable playback control.
+            </div>
+          {% else %}
+            <div class="mb-3">
+              <div><strong>Current Track:</strong> {{ track.name }}</div>
+              <div><strong>Artist:</strong> {{ track.artist }}</div>
+              <div><strong>Album:</strong> {{ track.album }}</div>
+            </div>
+            <div class="d-flex gap-2">
+              <form action="{{ url_for('spotify.spotify_play') }}" method="post">
+                <button type="submit" class="btn btn-success">Play</button>
+              </form>
+              <form action="{{ url_for('spotify.spotify_pause') }}" method="post">
+                <button type="submit" class="btn btn-warning">Pause</button>
+              </form>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

@@ -1,34 +1,25 @@
 {% extends "base.html" %}
 
-{% set active_page = "add" %}
-{% set page_title = "Add Task" %}
+{% set active_page = "review" %}
+{% set page_title = "Edit Task" %}
 
-{% block title %}Add Task - Daily Productivity Tracker{% endblock %}
+{% block title %}Edit Task - Daily Productivity Tracker{% endblock %}
 
 {% block content %}
   <div class="row justify-content-center">
     <div class="col-12 col-lg-8">
       <div class="card stat-card">
         <div class="card-body p-4">
-          <h5 class="card-title">Create a new task</h5>
-          <p class="text-body-secondary">Set a task title and optional due date.</p>
+          <h5 class="card-title">Edit task</h5>
 
           {% if error %}
             <div class="alert alert-danger" role="alert">{{ error }}</div>
           {% endif %}
 
-          <form action="{{ url_for('tasks.add_task') }}" method="post" class="vstack gap-3">
+          <form action="{{ url_for('tasks.edit_task', index=index) }}" method="post" class="vstack gap-3">
             <div>
               <label for="title" class="form-label">Task title</label>
-              <input
-                id="title"
-                type="text"
-                name="title"
-                value="{{ title }}"
-                class="form-control"
-                placeholder="e.g., Write report"
-                required
-              />
+              <input id="title" type="text" name="title" value="{{ title }}" class="form-control" required />
             </div>
 
             <div>
@@ -38,7 +29,7 @@
 
             <div>
               <label for="category" class="form-label">Category</label>
-              <input id="category" type="text" name="category" value="{{ category }}" class="form-control" placeholder="e.g., Work" />
+              <input id="category" type="text" name="category" value="{{ category }}" class="form-control" />
             </div>
 
             <div>
@@ -51,8 +42,8 @@
             </div>
 
             <div class="d-flex gap-2 flex-wrap">
-              <button type="submit" class="btn btn-primary">Add Task</button>
-              <a href="{{ url_for('tasks.home') }}" class="btn btn-outline-secondary">Back to Dashboard</a>
+              <button type="submit" class="btn btn-primary">Save Changes</button>
+              <a href="{{ url_for('tasks.review_page') }}" class="btn btn-outline-secondary">Back</a>
             </div>
           </form>
         </div>
@@ -60,4 +51,3 @@
     </div>
   </div>
 {% endblock %}
-
